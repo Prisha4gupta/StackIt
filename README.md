@@ -32,9 +32,3 @@ This isn’t just StackOverflow-lite — it’s faster, sleeker, real-time, and 
 Created By- Prisha Gupta 
 
 email id - prishag407@gmail.com
-
-/Votes
-  - answerId + userId → +1 or -1
-
-/Notifications
-  - toUserId, fromUserId, type, refId, read: true/false
