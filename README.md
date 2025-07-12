@@ -8,6 +8,10 @@
 
 https://drive.google.com/file/d/1eZhvKvQljYNTSQJUXS5OMsnMD0aRau4w/view?usp=sharing
 
+Created By- Prisha Gupta 
+
+email id - prishag407@gmail.com
+
 ---
 
 ## 🚀 Why StackIt?
@@ -33,10 +37,6 @@ This isn’t just StackOverflow-lite — it’s faster, sleeker, real-time, and 
 | 📱 **Fully Responsive** | Mobile-first, keyboard-accessible, smooth on all screens |
 
 ---
-
-Created By- Prisha Gupta 
-
-email id - prishag407@gmail.com
 
 
 ## ⚙️ Firestore Schema Overview
