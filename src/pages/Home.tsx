@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
 import QuestionCard from '@/components/QuestionCard';
@@ -10,7 +10,26 @@ import CommunityStats from '@/components/CommunityStats';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 
-const mockQuestions = [
+interface Question {
+  id: string;
+  title: string;
+  content: string;
+  tags: string[];
+  author: {
+    name: string;
+    avatar: string;
+    reputation: number;
+  };
+  stats: {
+    votes: number;
+    answers: number;
+    views: number;
+  };
+  createdAt: string;
+  hasAcceptedAnswer: boolean;
+}
+
+const mockQuestions: Question[] = [
   {
     id: '1',
     title: 'How to join 2 columns in a data set to make a separate column in SQL',
@@ -29,7 +48,7 @@ const mockQuestions = [
     createdAt: '2025-01-12T10:30:00Z',
     hasAcceptedAnswer: true
   },
-   {
+  {
     id: '2',
     title: 'React useEffect dependency array best practices',
     content: 'What are the best practices for managing dependency arrays in React useEffect hooks? I keep running into infinite re-render issues.',
@@ -106,6 +125,7 @@ const mockQuestions = [
 const Home = () => {
   const [questions, setQuestions] = useState(mockQuestions);
   const [activeFilter, setActiveFilter] = useState('newest');
+  const [activeSort, setActiveSort] = useState('newest');
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -118,19 +138,24 @@ const Home = () => {
     navigate('/ask');
   };
 
+  useEffect(() => {
+  document.title = "StackIt";
+}, []);
+
   const handleBrowseQuestions = () => {
-    // Refresh the page to see newest questions
-    window.location.reload();
+    // Reset to default view
+    setActiveFilter('newest');
+    setActiveSort('newest');
+    applyFiltersAndSorting('newest', 'newest');
   };
 
-  const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter);
-    // Actual filtering logic would go here
+  const applyFiltersAndSorting = (filter: string, sort: string) => {
     let filteredQuestions = [...mockQuestions];
     
+    // Apply filter
     switch(filter) {
       case 'trending':
-        filteredQuestions.sort((a, b) => b.stats.views - a.stats.views);
+        filteredQuestions = [...filteredQuestions].sort((a, b) => b.stats.views - a.stats.views);
         break;
       case 'unanswered':
         filteredQuestions = filteredQuestions.filter(q => !q.hasAcceptedAnswer);
@@ -139,23 +164,39 @@ const Home = () => {
         filteredQuestions = filteredQuestions.filter(q => q.hasAcceptedAnswer);
         break;
       default: // 'newest'
-        filteredQuestions.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
+        filteredQuestions = [...filteredQuestions];
     }
+    
+    // Apply sort
+    filteredQuestions.sort((a, b) => {
+      switch(sort) {
+        case 'newest':
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        case 'oldest':
+          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+        case 'most-votes':
+          return b.stats.votes - a.stats.votes;
+        case 'most-answers':
+          return b.stats.answers - a.stats.answers;
+        case 'most-views':
+          return b.stats.views - a.stats.views;
+        default:
+          return 0;
+      }
+    });
     
     setQuestions(filteredQuestions);
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-      // Initial sort by newest
-      handleFilterChange('newest');
-    }, 1000);
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    applyFiltersAndSorting(filter, activeSort);
+  };
 
-    return () => clearTimeout(timer);
-  }, []);
+  const handleSortChange = (sortOption: string) => {
+    setActiveSort(sortOption);
+    applyFiltersAndSorting(activeFilter, sortOption);
+  };
 
   const handleVote = (questionId: string, direction: 'up' | 'down') => {
     if (!user) {
@@ -176,10 +217,27 @@ const Home = () => {
     ));
   };
 
+  const handleTagClick = (tag: string) => {
+    // Filter questions by the selected tag
+    const filtered = mockQuestions.filter(q => q.tags.includes(tag.toLowerCase()));
+    setQuestions(filtered);
+    setActiveFilter('custom');
+  };
+
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+      applyFiltersAndSorting('newest', 'newest');
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen animated-bg">
-        <AnimatedBackground loading={isLoading} />
+        <AnimatedBackground loading={true} />
         <Navbar />
         <div className="pt-24 flex items-center justify-center min-h-screen">
           <div className="text-center">
@@ -192,99 +250,95 @@ const Home = () => {
   }
 
   return (
-    <div className="min-h-screen animated-bg">
-      <AnimatedBackground loading={false} />
-      <Navbar />
-      
-      <main className="pt-24 pb-12">
-        <div className="container mx-auto px-4">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              <span className="gradient-text">Welcome to StackIt</span>
-            </h1>
-            <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-              Join our community of developers, share knowledge, and get answers to your coding questions.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+  <div className="min-h-screen animated-bg">
+    <AnimatedBackground loading={isLoading} />
+    <Navbar />
+    
+    <main className="pt-24 pb-12">
+      <div className="container mx-auto px-4">
+        {/* Hero Section */}
+        <div className="text-center mb-12">
+          <h1 className="text-4xl md:text-6xl font-bold mb-6">
+            <span className="gradient-text">Welcome to StackIt</span>
+          </h1>
+          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+            Join our community of developers, share knowledge, and get answers to your questions.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            {!user ? (
               <Button 
                 size="lg" 
                 className="bg-gradient-primary glow-hover transition-spring"
-                onClick={handleAskQuestionClick}
+                onClick={() => navigate('/login', { state: { from: '/ask' } })}
               >
                 <Plus className="w-5 h-5 mr-2" />
                 Ask Your First Question
               </Button>
+            ) : null}
+            
+            <Button 
+              variant="outline" 
+              size="lg" 
+              className="glass transition-spring"
+              onClick={handleBrowseQuestions}
+            >
+              Browse Questions
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            <FilterBar
+              activeFilter={activeFilter}
+              activeSort={activeSort}
+              onFilterChange={handleFilterChange}
+              onSortChange={handleSortChange}
+              questionCount={questions.length}
+            />
+
+            {/* Questions List */}
+            <div className="space-y-6">
+              {questions.map((question, index) => (
+                <div
+                  key={question.id}
+                  className="animate-fade-in"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <QuestionCard 
+                    question={question} 
+                    onVote={handleVote} 
+                    onTagClick={handleTagClick}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Load More */}
+            <div className="text-center mt-12">
               <Button 
                 variant="outline" 
-                size="lg" 
-                className="glass transition-spring"
+                className="glass hover:scale-105 transition-spring"
                 onClick={handleBrowseQuestions}
               >
-                Browse Questions
+                Reset Filters
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Main Content */}
-            <div className="lg:col-span-3">
-              <FilterBar
-                activeFilter={activeFilter}
-                onFilterChange={handleFilterChange}
-                questionCount={questions.length}
-              />
-
-              {/* Questions List */}
-              <div className="space-y-6">
-                {questions.map((question, index) => (
-                  <div
-                    key={question.id}
-                    className="animate-fade-in"
-                    style={{ animationDelay: `${index * 0.1}s` }}
-                  >
-                    <QuestionCard 
-                      question={question} 
-                      onVote={handleVote} 
-                      onTagClick={(tag) => {
-                        // Implement tag filtering if needed
-                        console.log(`Filter by tag: ${tag}`);
-                      }}
-                    />
-                  </div>
-                ))}
-              </div>
-
-              {/* Load More */}
-              <div className="text-center mt-12">
-                <Button 
-                  variant="outline" 
-                  className="glass hover:scale-105 transition-spring"
-                  onClick={() => {
-                    // In a real app, this would load more questions
-                    console.log('Load more questions');
-                  }}
-                >
-                  Load More Questions
-                </Button>
-              </div>
-            </div>
-
-            {/* Sidebar */}
-            <div className="lg:col-span-1 space-y-6">
-              <CommunityStats />
-              <TrendingTags 
-                onTagClick={(tag) => {
-                  // Implement tag filtering
-                  console.log(`Filter by trending tag: ${tag}`);
-                }}
-              />
-            </div>
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <CommunityStats />
+            <TrendingTags onTagClick={handleTagClick} />
           </div>
         </div>
-      </main>
-    </div>
-  );
-};
+      </div>
+    </main>
+  </div>
+);
+
+}
 
 export default Home;

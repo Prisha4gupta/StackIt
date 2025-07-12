@@ -11,19 +11,19 @@ import {
 
 interface FilterBarProps {
   activeFilter: string;
+  activeSort: string;
   onFilterChange: (filter: string) => void;
-  onSortChange?: (sortOption: string) => void;
+  onSortChange: (sortOption: string) => void;
   questionCount: number;
 }
 
 const FilterBar = ({ 
   activeFilter, 
+  activeSort,
   onFilterChange, 
-  onSortChange = () => {}, 
+  onSortChange,
   questionCount 
 }: FilterBarProps) => {
-  const [activeSort, setActiveSort] = useState('newest');
-
   const filters = [
     { key: 'newest', label: 'Newest', icon: Clock, description: 'Most recently asked' },
     { key: 'trending', label: 'Trending', icon: TrendingUp, description: 'Hot questions' },
@@ -38,11 +38,6 @@ const FilterBar = ({
     { key: 'most-answers', label: 'Most answers' },
     { key: 'most-views', label: 'Most views' },
   ];
-
-  const handleSortChange = (sortKey: string) => {
-    setActiveSort(sortKey);
-    onSortChange(sortKey);
-  };
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -94,18 +89,14 @@ const FilterBar = ({
               <ChevronDown className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent 
-            className="glass-strong min-w-[180px]" 
-            align="end"
-            sideOffset={8}
-          >
+          <DropdownMenuContent className="glass-strong min-w-[180px]" align="end">
             {sortOptions.map((option) => (
               <DropdownMenuItem 
                 key={option.key}
                 className={`hover:bg-primary/10 focus:bg-primary/10 cursor-pointer ${
                   activeSort === option.key ? 'bg-primary/10 text-primary' : ''
                 }`}
-                onClick={() => handleSortChange(option.key)}
+                onClick={() => onSortChange(option.key)}
               >
                 {option.label}
                 {activeSort === option.key && (
