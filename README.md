@@ -32,3 +32,23 @@ This isn’t just StackOverflow-lite — it’s faster, sleeker, real-time, and 
 Created By- Prisha Gupta 
 
 email id - prishag407@gmail.com
+
+
+## ⚙️ Firestore Schema Overview
+
+```plaintext
+/Users
+  - uid
+  - displayName, email, badges[], streak, joinedAt
+
+/Questions
+  - title, description (HTML), tags[], userId, createdAt, acceptedAnswerId
+
+/Answers
+  - answerId, questionId, userId, content, votes[], createdAt
+
+/Votes
+  - answerId + userId → +1 or -1
+
+/Notifications
+  - toUserId, fromUserId, type, refId, read: true/false
