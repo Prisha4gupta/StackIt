@@ -4,6 +4,11 @@
 > A blazing-fast, real-time, gamified, and beautifully animated Q&A hub for developers.
 
 ---
+## Video Link
+
+https://drive.google.com/file/d/1eZhvKvQljYNTSQJUXS5OMsnMD0aRau4w/view?usp=sharing
+
+---
 
 ## 🚀 Why StackIt?
 
