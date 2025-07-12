@@ -12,10 +12,18 @@ import {
 interface FilterBarProps {
   activeFilter: string;
   onFilterChange: (filter: string) => void;
+  onSortChange?: (sortOption: string) => void;
   questionCount: number;
 }
 
-const FilterBar = ({ activeFilter, onFilterChange, questionCount }: FilterBarProps) => {
+const FilterBar = ({ 
+  activeFilter, 
+  onFilterChange, 
+  onSortChange = () => {}, 
+  questionCount 
+}: FilterBarProps) => {
+  const [activeSort, setActiveSort] = useState('newest');
+
   const filters = [
     { key: 'newest', label: 'Newest', icon: Clock, description: 'Most recently asked' },
     { key: 'trending', label: 'Trending', icon: TrendingUp, description: 'Hot questions' },
@@ -30,6 +38,11 @@ const FilterBar = ({ activeFilter, onFilterChange, questionCount }: FilterBarPro
     { key: 'most-answers', label: 'Most answers' },
     { key: 'most-views', label: 'Most views' },
   ];
+
+  const handleSortChange = (sortKey: string) => {
+    setActiveSort(sortKey);
+    onSortChange(sortKey);
+  };
 
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -71,19 +84,33 @@ const FilterBar = ({ activeFilter, onFilterChange, questionCount }: FilterBarPro
         {/* Sort Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="flex items-center space-x-2 hover:bg-primary/10"
+            >
               <SortAsc className="w-4 h-4" />
               <span className="hidden sm:inline">Sort</span>
               <ChevronDown className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="glass-strong" align="end">
+          <DropdownMenuContent 
+            className="glass-strong min-w-[180px]" 
+            align="end"
+            sideOffset={8}
+          >
             {sortOptions.map((option) => (
               <DropdownMenuItem 
                 key={option.key}
-                className="hover:bg-primary/10 focus:bg-primary/10 cursor-pointer"
+                className={`hover:bg-primary/10 focus:bg-primary/10 cursor-pointer ${
+                  activeSort === option.key ? 'bg-primary/10 text-primary' : ''
+                }`}
+                onClick={() => handleSortChange(option.key)}
               >
                 {option.label}
+                {activeSort === option.key && (
+                  <span className="ml-auto">✓</span>
+                )}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>

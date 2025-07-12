@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AnimatedBackground from '@/components/AnimatedBackground';
 import Navbar from '@/components/Navbar';
 import QuestionCard from '@/components/QuestionCard';
 import FilterBar from '@/components/FilterBar';
 import TrendingTags from '@/components/TrendingTags';
 import CommunityStats from '@/components/CommunityStats';
-import BadgesPanel from '@/components/BadgesPanel';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
-// Mock data for questions
 const mockQuestions = [
   {
     id: '1',
@@ -30,7 +29,7 @@ const mockQuestions = [
     createdAt: '2025-01-12T10:30:00Z',
     hasAcceptedAnswer: true
   },
-  {
+   {
     id: '2',
     title: 'React useEffect dependency array best practices',
     content: 'What are the best practices for managing dependency arrays in React useEffect hooks? I keep running into infinite re-render issues.',
@@ -108,31 +107,79 @@ const Home = () => {
   const [questions, setQuestions] = useState(mockQuestions);
   const [activeFilter, setActiveFilter] = useState('newest');
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleAskQuestionClick = () => {
+    if (!user) {
+      navigate('/login', { state: { from: '/ask' } });
+      return;
+    }
+    navigate('/ask');
+  };
+
+  const handleBrowseQuestions = () => {
+    // Refresh the page to see newest questions
+    window.location.reload();
+  };
+
+  const handleFilterChange = (filter: string) => {
+    setActiveFilter(filter);
+    // Actual filtering logic would go here
+    let filteredQuestions = [...mockQuestions];
+    
+    switch(filter) {
+      case 'trending':
+        filteredQuestions.sort((a, b) => b.stats.views - a.stats.views);
+        break;
+      case 'unanswered':
+        filteredQuestions = filteredQuestions.filter(q => !q.hasAcceptedAnswer);
+        break;
+      case 'solved':
+        filteredQuestions = filteredQuestions.filter(q => q.hasAcceptedAnswer);
+        break;
+      default: // 'newest'
+        filteredQuestions.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+    }
+    
+    setQuestions(filteredQuestions);
+  };
 
   useEffect(() => {
-    // Simulate loading
     const timer = setTimeout(() => {
       setIsLoading(false);
+      // Initial sort by newest
+      handleFilterChange('newest');
     }, 1000);
 
     return () => clearTimeout(timer);
   }, []);
 
-  const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter);
-    // Here you would typically filter the questions based on the selected filter
-    console.log('Filter changed to:', filter);
-  };
-
   const handleVote = (questionId: string, direction: 'up' | 'down') => {
-    // Handle voting logic
-    console.log(`Vote ${direction} on question ${questionId}`);
+    if (!user) {
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+    // Update the mock data with new votes
+    setQuestions(prev => prev.map(q => 
+      q.id === questionId 
+        ? { 
+            ...q, 
+            stats: { 
+              ...q.stats, 
+              votes: direction === 'up' ? q.stats.votes + 1 : q.stats.votes - 1 
+            } 
+          } 
+        : q
+    ));
   };
 
   if (isLoading) {
     return (
       <div className="min-h-screen animated-bg">
-        <AnimatedBackground />
+        <AnimatedBackground loading={isLoading} />
         <Navbar />
         <div className="pt-24 flex items-center justify-center min-h-screen">
           <div className="text-center">
@@ -146,7 +193,7 @@ const Home = () => {
 
   return (
     <div className="min-h-screen animated-bg">
-      <AnimatedBackground />
+      <AnimatedBackground loading={false} />
       <Navbar />
       
       <main className="pt-24 pb-12">
@@ -154,19 +201,26 @@ const Home = () => {
           {/* Hero Section */}
           <div className="text-center mb-12">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              <span className="gradient-text typing">Welcome to StackIt</span>
+              <span className="gradient-text">Welcome to StackIt</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
               Join our community of developers, share knowledge, and get answers to your coding questions.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/ask">
-                <Button size="lg" className="bg-gradient-primary glow-hover transition-spring">
-                  <Plus className="w-5 h-5 mr-2" />
-                  Ask Your First Question
-                </Button>
-              </Link>
-              <Button variant="outline" size="lg" className="glass transition-spring">
+              <Button 
+                size="lg" 
+                className="bg-gradient-primary glow-hover transition-spring"
+                onClick={handleAskQuestionClick}
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Ask Your First Question
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg" 
+                className="glass transition-spring"
+                onClick={handleBrowseQuestions}
+              >
                 Browse Questions
               </Button>
             </div>
@@ -189,14 +243,28 @@ const Home = () => {
                     className="animate-fade-in"
                     style={{ animationDelay: `${index * 0.1}s` }}
                   >
-                    <QuestionCard question={question} onVote={handleVote} />
+                    <QuestionCard 
+                      question={question} 
+                      onVote={handleVote} 
+                      onTagClick={(tag) => {
+                        // Implement tag filtering if needed
+                        console.log(`Filter by tag: ${tag}`);
+                      }}
+                    />
                   </div>
                 ))}
               </div>
 
               {/* Load More */}
               <div className="text-center mt-12">
-                <Button variant="outline" className="glass hover:scale-105 transition-spring">
+                <Button 
+                  variant="outline" 
+                  className="glass hover:scale-105 transition-spring"
+                  onClick={() => {
+                    // In a real app, this would load more questions
+                    console.log('Load more questions');
+                  }}
+                >
                   Load More Questions
                 </Button>
               </div>
@@ -205,8 +273,12 @@ const Home = () => {
             {/* Sidebar */}
             <div className="lg:col-span-1 space-y-6">
               <CommunityStats />
-              <TrendingTags />
-              <BadgesPanel />
+              <TrendingTags 
+                onTagClick={(tag) => {
+                  // Implement tag filtering
+                  console.log(`Filter by trending tag: ${tag}`);
+                }}
+              />
             </div>
           </div>
         </div>

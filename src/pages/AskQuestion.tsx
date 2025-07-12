@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, X, Hash, Send, AlertCircle } from 'lucide-react';
 import AnimatedBackground from '@/components/AnimatedBackground';
@@ -10,9 +10,33 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useAuth } from '@/contexts/AuthContext';
 
 const AskQuestion = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  useEffect(() => {
+    if (!user) {
+      navigate('/login', { state: { from: '/ask' } });
+    }
+  }, [user, navigate]);
+
+  if (!user) {
+    return (
+      <div className="min-h-screen animated-bg">
+        <AnimatedBackground />
+        <Navbar />
+        <div className="pt-24 flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Redirecting to login...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -311,10 +335,6 @@ const AskQuestion = () => {
                       </ul>
                     </div>
                   </div>
-
-                  <Button variant="outline" className="w-full text-sm">
-                    View question guidelines
-                  </Button>
                 </CardContent>
               </Card>
             </div>

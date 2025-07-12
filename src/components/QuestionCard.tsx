@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { MessageSquare, ArrowUp, ArrowDown, Eye, Clock, User, Tag } from 'lucide-react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Question {
   id: string;
@@ -33,8 +35,15 @@ interface QuestionCardProps {
 const QuestionCard = ({ question, onVote }: QuestionCardProps) => {
   const [votes, setVotes] = useState(question.stats.votes);
   const [userVote, setUserVote] = useState<'up' | 'down' | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
   const handleVote = (direction: 'up' | 'down') => {
+    if (!user) {
+      navigate('/login', { state: { from: window.location.pathname } });
+      return;
+    }
+
     if (userVote === direction) {
       // Remove vote
       setVotes(votes - (direction === 'up' ? 1 : -1));
@@ -66,29 +75,53 @@ const QuestionCard = ({ question, onVote }: QuestionCardProps) => {
         <div className="flex gap-4">
           {/* Vote Section */}
           <div className="flex flex-col items-center space-y-2 flex-shrink-0">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleVote('up')}
-              className={`p-1 transition-colors ${
-                userVote === 'up' ? 'text-success bg-success/10' : 'hover:text-success'
-              }`}
-            >
-              <ArrowUp className="w-5 h-5" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleVote('up')}
+                    className={`p-1 transition-colors ${
+                      userVote === 'up' ? 'text-success bg-success/10' : 'hover:text-success'
+                    }`}
+                  >
+                    <ArrowUp className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                {!user && (
+                  <TooltipContent>
+                    <p>Login to vote</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
+            
             <span className={`font-bold text-lg ${votes > 0 ? 'text-success' : votes < 0 ? 'text-destructive' : ''}`}>
               {votes}
             </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleVote('down')}
-              className={`p-1 transition-colors ${
-                userVote === 'down' ? 'text-destructive bg-destructive/10' : 'hover:text-destructive'
-              }`}
-            >
-              <ArrowDown className="w-5 h-5" />
-            </Button>
+            
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleVote('down')}
+                    className={`p-1 transition-colors ${
+                      userVote === 'down' ? 'text-destructive bg-destructive/10' : 'hover:text-destructive'
+                    }`}
+                  >
+                    <ArrowDown className="w-5 h-5" />
+                  </Button>
+                </TooltipTrigger>
+                {!user && (
+                  <TooltipContent>
+                    <p>Login to vote</p>
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
           {/* Content Section */}
